@@ -1,7 +1,8 @@
 {
   "name": "ratp-stops-indexer",
   "version": "1.0.0",
-  "description": "Load RATP Open Data into Algolia for a better search experience.",
+  "description":
+    "Load RATP Open Data into Algolia for a better search experience.",
   "main": "index.js",
   "engines": {
     "node": ">=10"
@@ -13,14 +14,20 @@
     "test": "jest",
     "lint": "eslint .",
     "precommit": "lint-staged",
-    "prettify": "prettier-eslint --write \"**/*.js*\" --list-different  --config .prettierrc"
+    "prettify":
+      "prettier-eslint --write \"**/*.js*\" --list-different  --config .prettierrc"
   },
-  "keywords": [
-    "ratp",
-    "index",
-    "search",
-    "stops"
-  ],
+  "lint-staged": {
+    "linters": {
+      "*.js": [
+        "prettier-eslint --write --config .prettierrc",
+        "eslint --fix",
+        "git add"
+      ],
+      "*.json": ["prettier-eslint --write --config .prettierrc", "git add"]
+    }
+  },
+  "keywords": ["ratp", "index", "search", "stops"],
   "author": "MatthieuLemoine",
   "license": "MIT",
   "dependencies": {
