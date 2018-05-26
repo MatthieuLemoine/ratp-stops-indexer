@@ -74,7 +74,7 @@ const getSplitStream = () =>
     transform(chunk, encoding, cb) {
       this.last = (this.last || '') + chunk;
       const lines = this.last.split(/\r?\n/);
-      this._last = lines.pop();
+      this.last = lines.pop();
       lines.forEach(line => this.push(line));
       cb();
     },
@@ -100,14 +100,14 @@ const getLines = async DATA_DIRECTORY => {
         .reduce((map, item) => {
           const [
             route_id,
-            agency_id,
-            route_short_name,
+            _agency_id,
+            _route_short_name,
             route_long_name,
-            route_desc,
-            route_type,
-            route_url,
-            route_color,
-            route_text_color,
+            _route_desc,
+            _route_type,
+            _route_url,
+            _route_color,
+            _route_text_color,
           ] = item.split(',');
           return {
             ...map,
@@ -125,12 +125,12 @@ const getLines = async DATA_DIRECTORY => {
       for await (const line of streamTrips) {
         const [
           route_id,
-          service_id,
+          _service_id,
           trip_id,
-          trip_headsign,
-          trip_short_name,
-          direction_id,
-          shape_id,
+          _trip_headsign,
+          _trip_short_name,
+          _direction_id,
+          _shape_id,
         ] = line.split(',');
         mapTripsRoutes[trip_id] = route_id;
       }
@@ -145,12 +145,12 @@ const getLines = async DATA_DIRECTORY => {
       for await (const line of streamTimes) {
         const [
           trip_id,
-          arrival_time,
-          departure_time,
+          _arrival_time,
+          _departure_time,
           stop_id,
-          stop_sequence,
-          stop_headsign,
-          shape_dist_traveled,
+          _stop_sequence,
+          _stop_headsign,
+          _shape_dist_traveled,
         ] = line.split(',');
         mapStationsRoutes[stop_id] = mapTripsRoutes[trip_id];
       }
@@ -164,7 +164,7 @@ const getLines = async DATA_DIRECTORY => {
         },
       ).pipe(getSplitStream());
       for await (const line of streamTransfers) {
-        const [from_stop_id, to_stop_id] = line.split(',').slice(1);
+        const [from_stop_id, to_stop_id] = line.split(',');
         if (!mapStopTransfers[from_stop_id]) {
           mapStopTransfers[from_stop_id] = [];
         }
@@ -209,7 +209,7 @@ const getLines = async DATA_DIRECTORY => {
           } else {
             stops.push({
               id: uuid(),
-              name: name,
+              name,
               locations: [
                 {
                   description: stop_desc,
@@ -247,20 +247,25 @@ const getLines = async DATA_DIRECTORY => {
   );
 };
 
-const run = async ({ gtfs, saveFile, errorFile, fromSave }) => {
+const run = async ({
+  gtfs: DATA_DIRECTORY,
+  saveFile: savePath,
+  errorFile: errorPath,
+  fromSave: useSave,
+}) => {
   try {
-    const lines = fromSave
-      ? await fs.readFile(saveFile, 'utf8').then(data => JSON.parse(data).lines)
-      : await getLines(gtfs) // Dump lines in case of indexing failure
-          .then(async lines => {
+    const lines = useSave
+      ? await fs.readFile(savePath, 'utf8').then(data => JSON.parse(data).lines)
+      : await getLines(DATA_DIRECTORY) // Dump lines in case of indexing failure
+          .then(async result => {
             if (saveFile) {
               await fs.writeFile(
                 saveFile,
-                JSON.stringify({ lines }, null, 2),
+                JSON.stringify({ lines: result }, null, 2),
                 'utf8',
               );
             }
-            return lines;
+            return result;
           });
     const result = await writeInIndex(lines);
     if (isMain) {
@@ -271,8 +276,8 @@ const run = async ({ gtfs, saveFile, errorFile, fromSave }) => {
     if (isMain) {
       console.error(e);
     }
-    if (errorFile) {
-      await fs.writeFile(errorFile, JSON.stringify(err, 2, null), 'utf8');
+    if (errorPath) {
+      await fs.writeFile(errorPath, JSON.stringify(e, 2, null), 'utf8');
     }
     throw e;
   }
