@@ -48,5 +48,13 @@
     "lint-staged": "^7.1.0",
     "prettier": "^1.12.1",
     "prettier-eslint-cli": "^4.7.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatthieuLemoine/ratp-stops-indexer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MatthieuLemoine/ratp-stops-indexer/issues"
+  },
+  "homepage": "https://github.com/MatthieuLemoine/ratp-stops-indexer#readme"
 }

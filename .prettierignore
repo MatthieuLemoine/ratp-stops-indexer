@@ -1,1 +1,5 @@
 node_modules
+lines.json
+err.json
+RATP_GTFS_LINES
+package-lock.json
