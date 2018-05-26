@@ -1,0 +1,4 @@
+node_modules
+RATP_GTFS_LINES
+lines.json
+err.json
