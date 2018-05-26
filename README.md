@@ -2,7 +2,7 @@
 
 Load RATP open data into Algolia for a better search experience.
 
-## Install
+## Install
 
 ```
 npm i -g ratp-stops-indexer
