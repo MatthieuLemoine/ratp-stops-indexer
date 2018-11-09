@@ -88,7 +88,11 @@ const getLines = async DATA_DIRECTORY => {
     total: linesDir.length,
     schema: ' |:bar| :current/:total :percent :elapseds :etas :name',
   });
-  return Promise.all(
+  // Map stopId to transfers
+  const mapStopTransfers = {};
+  // Map location (latitude:longitude) to stops
+  const mapLocationStops = {};
+  const lines = await Promise.all(
     linesDir.map(async lineDir => {
       // Get routes
       const routes = (await fs.readFile(
@@ -155,8 +159,6 @@ const getLines = async DATA_DIRECTORY => {
         mapStationsRoutes[stop_id] = mapTripsRoutes[trip_id];
       }
 
-      // Map stopId to transfers
-      const mapStopTransfers = {};
       const streamTransfers = createReadStream(
         path.join(lineDir, TRANSFERS_FILENAME),
         {
@@ -229,6 +231,11 @@ const getLines = async DATA_DIRECTORY => {
             });
             mapStopIndex.set(name, stops.length - 1);
           }
+          // Add to location map
+          const location = `${stop_lat}:${stop_lon}`;
+          mapLocationStops[location] = (
+            mapLocationStops[location] || []
+          ).concat(stop_id);
         }
       }
       const [, , type, name] = path.basename(lineDir).split('_');
@@ -245,6 +252,35 @@ const getLines = async DATA_DIRECTORY => {
       };
     }),
   );
+  // Add missing transfers from locations & transitive transfers
+  return lines.map(line => ({
+    ...line,
+    stops: line.stops.map(stop => {
+      const directTransfers = mapStopTransfers[stop.providerId] || [];
+      const transitiveTransfers = directTransfers.reduce(
+        (acc, transfer) => [...acc, ...(mapStopTransfers[transfer] || [])],
+        [],
+      );
+      return {
+        ...stop,
+        transfers: Array.from(
+          new Set([
+            ...directTransfers,
+            ...transitiveTransfers,
+            ...stop.locations.reduce(
+              (acc, location) => [
+                ...acc,
+                ...(mapLocationStops[
+                  `${location.latitude}:${location.longitude}`
+                ] || []),
+              ],
+              [],
+            ),
+          ]),
+        ).filter(transfer => transfer !== stop.providerId),
+      };
+    }),
+  }));
 };
 
 const run = async ({
