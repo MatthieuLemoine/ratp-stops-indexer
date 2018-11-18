@@ -19,48 +19,22 @@ const TRIPS_FILENAME = 'trips.txt';
 const STOPS_TIMES_FILENAME = 'stop_times.txt';
 const TRANSFERS_FILENAME = 'transfers.txt';
 
-// There are 12049 RATP stops but the free Algolia plan only allows 10000 records
-// So we need to exclude some lines
-const shouldBeExclude = name =>
-  name.includes('N') ||
-  name.includes('V') ||
-  [
-    'Amibus',
-    'Choisyb',
-    'Monast',
-    'Montbus',
-    'Montmar',
-    'Orlybus',
-    'Pc1',
-    'Pc3',
-    'Roissyb',
-    'Subb',
-    'Tillbus',
-    'Tim',
-    'Tub',
-    'Tuc',
-    'Tuvim',
-    'Tvm',
-  ].includes(name);
-
 const writeInIndex = lines => {
   const stops = lines.reduce(
     (acc, line) =>
-      shouldBeExclude(line.name)
-        ? acc
-        : acc.concat(
-            line.stops.map(stop => ({
-              action: 'addObject',
-              indexName: INDEX,
-              body: {
-                ...stop,
-                line: line.name,
-                type: line.type,
-                // To avoid duplicates on ratp lines update
-                objectID: stop.providerId,
-              },
-            })),
-          ),
+      acc.concat(
+        line.stops.map(stop => ({
+          action: 'addObject',
+          indexName: INDEX,
+          body: {
+            ...stop,
+            line: line.name,
+            type: line.type,
+            // To avoid duplicates on ratp lines update
+            objectID: stop.providerId,
+          },
+        })),
+      ),
     [],
   );
   console.log(`${stops.length} entities will be written in index`);
