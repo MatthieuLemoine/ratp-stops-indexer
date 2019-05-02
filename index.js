@@ -19,6 +19,26 @@ const TRIPS_FILENAME = 'trips.txt';
 const STOPS_TIMES_FILENAME = 'stop_times.txt';
 const TRANSFERS_FILENAME = 'transfers.txt';
 
+const sliceCall = (action, list, chunkSize = 100) => {
+  let chain = Promise.resolve();
+  const items = [...list];
+  const results = [];
+  const bar = new ProgressBar({
+    total: list.length,
+    schema: ' |:bar| :current/:total :percent :elapseds :etas',
+  });
+  while (items.length) {
+    const chunk = items.splice(0, chunkSize);
+    chain = chain
+      .then(() => action(chunk))
+      .then(result => {
+        results.push(result);
+        bar.tick(chunkSize);
+      });
+  }
+  return chain.then(() => results);
+};
+
 const writeInIndex = lines => {
   const stops = lines.reduce(
     (acc, line) =>
@@ -38,7 +58,7 @@ const writeInIndex = lines => {
     [],
   );
   console.log(`${stops.length} entities will be written in index`);
-  return client.batch(stops);
+  return sliceCall(client.batch.bind(client), stops, 500);
 };
 
 const join = parentDir => dirname => path.join(parentDir, dirname);
@@ -280,7 +300,7 @@ const run = async ({
     const result = await writeInIndex(lines);
     if (isMain) {
       console.log('Done');
-      console.log(`${result.objectIDs.length} entities created in index`);
+      console.log(`${result.length} entities created in index`);
     }
   } catch (e) {
     if (isMain) {
